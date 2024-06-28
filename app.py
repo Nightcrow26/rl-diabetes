@@ -9,6 +9,18 @@ df_makan_malam = pd.read_excel('makan_malam.xlsx')
 df_sayur = pd.read_excel('sayuran.xlsx')
 df_buah = pd.read_excel('buah.xlsx')
 
+df_resep_camilan = pd.read_excel('data resep.xlsx', sheet_name='camilan_resep_bahan')
+df_resep_sayuran = pd.read_excel('data resep.xlsx', sheet_name='sayuran_resep_bahan')
+df_resep_sarapan = pd.read_excel('data resep.xlsx', sheet_name='sarapan_resep_bahan')
+df_resep_siang = pd.read_excel('data resep.xlsx', sheet_name='makan_siang_resep_bahan')
+df_resep_malam = pd.read_excel('data resep.xlsx', sheet_name='makan_malam_resep_bahan')
+
+# Example CSS to widen tables
+st.write(
+    f'<style>div.row-widget.stRadio > div{{width: 90%}}</style>',
+    unsafe_allow_html=True,
+)
+
 # Input data pasien baru
 st.title("Diet Recommendation System")
 
@@ -68,21 +80,58 @@ if st.button("Calculate BMR and Energy Needs"):
             df = new_env.df_sarapan if i == 0 else new_env.df_makan_siang if i == 2 else new_env.df_makan_malam
             rec = rec % len(df)
             food_item = df.iloc[rec]
-            st.write(f"{meal_times[i]}: {food_item['nama_resep']} - Kalori: {food_item['kalori']}, Protein: {food_item['protein']}, Karbo: {food_item['karbo']}, Lemak: {food_item['lemak']}, Rating: {food_item['rating']}")
+            resep_df = df_resep_sarapan if i == 0 else df_resep_siang if i == 2 else df_resep_malam
+            # Memeriksa keberadaan nama_resep dalam resep_df
 
-            # Add fruit and vegetable recommendations
-            fruit_item = df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]
-            veg_item = df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0]
-            st.write(f"Buah: {fruit_item['nama_buah']} - Kalori: {fruit_item['kalori']}, Protein: {fruit_item['protein']}, Karbo: {fruit_item['karbo']}, Lemak: {fruit_item['lemak']}")
-            st.write(f"Sayur: {veg_item['nama_resep']} - Kalori: {veg_item['kalori']}, Protein: {veg_item['protein']}, Karbo: {veg_item['karbo']}, Lemak: {veg_item['lemak']}")
-            st.write("----------")
+            if food_item['nama_resep'] in resep_df['nama_resep'].values:
+                bahan = resep_df[resep_df['nama_resep'] == food_item['nama_resep']]['bahan_bahan'].values[0]
+                cara_masak = resep_df[resep_df['nama_resep'] == food_item['nama_resep']]['cara_membuat'].values[0]
+            else:
+                bahan = '-'
+                cara_masak = '-'
+
+            st.write(f"### {meal_times[i]}")
+            st.table(pd.DataFrame({
+                'Jenis': ['Makanan Utama', 'Sayur', 'Buah'],
+                'Nama': [food_item['nama_resep'], df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0]['nama_resep'],
+                         df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['nama_buah']],
+                'Kalori': [food_item['kalori'], df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0]['kalori'],
+                           df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['kalori']],
+                'Protein (gr)': [food_item['protein'], df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0]['protein'],
+                                 df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['protein']],
+                'Karbo (gr)': [food_item['karbo'], df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0]['karbo'],
+                               df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['karbo']],
+                'Lemak (gr)': [food_item['lemak'], df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0]['lemak'],
+                               df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['lemak']],
+                'Bahan': [bahan, df_resep_sayuran[
+                    df_resep_sayuran['nama_resep'] == df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0][
+                        'nama_resep']]['bahan_bahan'].values[0], '-'],
+                'Cara Masak': [cara_masak, df_resep_sayuran[
+                    df_resep_sayuran['nama_resep'] == df_sayur[df_sayur['kalori'] <= 50].sample(1).iloc[0][
+                        'nama_resep']]['cara_membuat'].values[0], '-']
+            }))
         else:
             df = new_env.df_camilan
             rec = rec % len(df)
             food_item = df.iloc[rec]
-            st.write(f"{meal_times[i]}: {food_item['nama_resep']} - Kalori: {food_item['kalori']}, Protein: {food_item['protein']}, Karbo: {food_item['karbo']}, Lemak: {food_item['lemak']}, Rating: {food_item['rating']}")
+            resep_df = df_resep_camilan
 
-            # Add fruit recommendation
-            fruit_item = df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]
-            st.write(f"Buah: {fruit_item['nama_buah']} - Kalori: {fruit_item['kalori']}, Protein: {fruit_item['protein']}, Karbo: {fruit_item['karbo']}, Lemak: {fruit_item['lemak']}")
-            st.write("----------")
+            # Memeriksa keberadaan nama_resep dalam resep_df
+            if food_item['nama_resep'] in resep_df['nama_resep'].values:
+                bahan = resep_df[resep_df['nama_resep'] == food_item['nama_resep']]['bahan_bahan'].values[0]
+                cara_masak = resep_df[resep_df['nama_resep'] == food_item['nama_resep']]['cara_membuat'].values[0]
+            else:
+                bahan = '-'
+                cara_masak = '-'
+
+            st.write(f"### {meal_times[i]}")
+            st.table(pd.DataFrame({
+                'Jenis': ['Camilan', 'Buah'],
+                'Nama': [food_item['nama_resep'], df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['nama_buah']],
+                'Kalori': [food_item['kalori'], df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['kalori']],
+                'Protein (gr)': [food_item['protein'], df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['protein']],
+                'Karbo (gr)': [food_item['karbo'], df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['karbo']],
+                'Lemak (gr)': [food_item['lemak'], df_buah[df_buah['kalori'] <= 50].sample(1).iloc[0]['lemak']],
+                'Bahan': [bahan, '-'],
+                'Cara Masak': [cara_masak, '-']
+            }))
